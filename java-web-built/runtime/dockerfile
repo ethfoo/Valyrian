@@ -1,0 +1,6 @@
+FROM tomcat:7
+
+COPY file /
+RUN /setup.sh
+WORKDIR /usr/local/tomcat
+ENTRYPOINT ["/startup.sh"]
