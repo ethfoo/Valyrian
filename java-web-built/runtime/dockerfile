@@ -1,5 +1,4 @@
-FROM tomcat:7
-
+FROM hub.c.163.com/library/tomcat:7-jre8
 COPY file /
 RUN /setup.sh
 WORKDIR /usr/local/tomcat
