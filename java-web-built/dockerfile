@@ -5,16 +5,20 @@
 FROM hub.c.163.com/library/maven:3.5.0-jdk-8
 MAINTAINER fuyi1@corp.netease.com
 
+RUN apt-get update && apt-get install -y libltdl7
+
 #环境变量：
 #$JAVA_HOME=/docker-java-home
 #$MAVEN_HOME=/usr/share/maven
 
 #为了使git有权限拉代码，复制ssh秘钥至/root/.ssh
 COPY ssh /root/.ssh/
+
 #可将用户自定义的settings文件拷贝到root的.m2目录里，配置公司本地的maven库地址
 #将/root/.m2/repository挂载到宿主机本地，免去每次都要重新下载jar包
 COPY m2 /root/.m2/
 
 COPY runtime /root/builder/
 COPY build.sh /root/
+RUN chmod +x /root/build.sh
 ENTRYPOINT ["/root/build.sh"]
