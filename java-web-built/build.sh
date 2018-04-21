@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -x
 
 #该脚本
 # 1. 拉取代码
@@ -13,8 +14,8 @@ set -e
 #$MAVEN_HOME=/usr/share/maven
 
 #远程GIT代码仓库
-#REMOTE_GIT_ADDR='github.com:ethfoo/base-java-web.git'
-REMOTE_GIT_ADDR='https://github.com/ethfoo/base-java-web.git'
+REMOTE_GIT_ADDR='git@github.com:ethfoo/base-java-web.git'
+#REMOTE_GIT_ADDR='https://github.com/ethfoo/base-java-web.git'
 #代码分支
 BRANCH='master'
 #构建的MAVEN子模块
@@ -27,11 +28,7 @@ LOG='/var/log/valyrian'
 
 ######### git拉取代码 ############
 cd /root
-echo 'cd /root' > ${LOG}
-echo `ls .` >> ${LOG}
 git clone --branch=${BRANCH} ${REMOTE_GIT_ADDR} workapp
-echo 'git clone' >> ${LOG}
-echo `ls .` >> ${LOG}
 cd /root/workapp
 _COMMIT_HASH=`git rev-parse HEAD`
 
@@ -54,7 +51,4 @@ _NOW=`date +%Y%m%d-%H%M%S`
 _IMAGE_FULL_NAME=${IMAGE_PRE_NAME}:${_NOW}${_REV}
 ######### 构建镜像 ###############
 cd /root/builder
-echo 'cd /root/builder' >> ${LOG}
-echo `ls .` >> ${LOG}
-echo ${_IMAGE_FULL_NAME} >> ${LOG}
 docker build -t ${_IMAGE_FULL_NAME} .
