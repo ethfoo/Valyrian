@@ -14,15 +14,42 @@ set -x
 #$MAVEN_HOME=/usr/share/maven
 
 #远程GIT代码仓库
-REMOTE_GIT_ADDR='git@github.com:ethfoo/base-java-web.git'
+#REMOTE_GIT_ADDR='git@github.com:ethfoo/base-java-web.git'
 #REMOTE_GIT_ADDR='https://github.com/ethfoo/base-java-web.git'
 #代码分支
-BRANCH='master'
+#BRANCH='master'
+#MAVEN项目类型：有子模块还是没有
+#STANDALONE='-s'
 #构建的MAVEN子模块
-TARGET_MODULE='base-springmvc-spring Webapp'
+#TARGET_MODULE='base-springmvc-spring Webapp'
 #镜像TAG前缀
-IMAGE_PRE_NAME='valyrian'
+#IMAGE_PRE_NAME='valyrian'
 ###################
+#usage() { echo "Usage: $0 -r <remote git addr> -b <branch> -t <target module> -s <standalone> -i <image pre name>" 1>2&; exit 1; }
+while getopts "r:b:t:i:s" o; do
+	case "${o}" in
+		r)
+			REMOTE_GIT_ADDR=${OPTARG}
+			;;
+		b)
+			BRANCH=${OPTARG}
+			;;
+		t)
+			TARGET_MODULE=${OPTARG}
+			;;
+		s)
+			STANDALONE="-s"
+			;;
+		i)
+			IMAGE_PRE_NAME=${OPTARG}
+			;;
+		*)
+			usage
+			;;
+	esac
+done
+shift $((OPTIND-1))
+
 
 LOG='/var/log/valyrian'
 
@@ -33,10 +60,13 @@ cd /root/workapp
 _COMMIT_HASH=`git rev-parse HEAD`
 
 ######### maven构建war包 #########
-mvn clean install -Dmaven.teset.skip=true
-cd /root/workapp/target
-#mvn clean install -pl ${TARGET_MODULE} -am -Dmaven.test.skip=true
-#cd /root/workapp/${TARGET_MODULE}/target
+if [ "$STANDALONE" = "-s" ]; then
+	mvn clean install -Dmaven.teset.skip=true
+	cd /root/workapp/target
+else
+	mvn clean install -pl ${TARGET_MODULE} -am -Dmaven.test.skip=true
+	cd /root/workapp/${TARGET_MODULE}/target
+fi
 
 #将war包复制到file目录里，COPY到运行时镜像中
 mv ./*.war /root/builder/file/ROOT.war
@@ -48,7 +78,7 @@ mv ./*.war /root/builder/file/ROOT.war
 _REV=${COMMIT_HASH:0:8}
 _NOW=`date +%Y%m%d-%H%M%S`
 
-_IMAGE_FULL_NAME=${IMAGE_PRE_NAME}:${_NOW}${_REV}
+_IMAGE_FULL_NAME="${IMAGE_PRE_NAME}:${_NOW}${_REV}"
 ######### 构建镜像 ###############
 cd /root/builder
 docker build -t ${_IMAGE_FULL_NAME} .
