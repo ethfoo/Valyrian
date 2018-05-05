@@ -149,11 +149,11 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 		buildSh.WriteAt([]byte(shellStr) ,curOffset)
 
 		//构建 构建时镜像
-		_, err = utils.RunShellFile("output/" + genDto.ShellName + "/dockerbuild-buildimage.sh")
-		if err!=nil {
-			utils.ReturnInternalError(w)
-			return
-		}
+		// _, err = utils.RunShellFile("output/" + genDto.ShellName + "/dockerbuild-buildimage.sh")
+		// if err!=nil {
+		// 	utils.ReturnInternalError(w)
+		// 	return
+		// }
 		utils.Return(utils.Response{Code:"200", Msg:"genarate shell success"}, w)
 	}
 }
