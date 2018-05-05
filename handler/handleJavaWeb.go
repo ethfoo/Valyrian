@@ -100,6 +100,7 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 			utils.ReturnInternalError(w)
 			return
 		}
+		os.Chmod("output/" + genDto.ShellName + "/build-shell/java-web-built/dockerbuild-buildimage.sh", 0666)
 
 		if genDto.UseSsh == "true" {
 			prefix := "output/" + genDto.ShellName + "/build-shell/java-web-built/ssh/";
@@ -148,12 +149,14 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 		shellStr := gitAddrStr + repositoryStr
 		buildSh.WriteAt([]byte(shellStr) ,curOffset)
 
+		log.Printf("----------begin to build buildimage--------\n")
 		//构建 构建时镜像
-		// _, err = utils.RunShellFile("output/" + genDto.ShellName + "/dockerbuild-buildimage.sh")
-		// if err!=nil {
-		// 	utils.ReturnInternalError(w)
-		// 	return
-		// }
+		_, err = utils.RunShellFile("output/" + genDto.ShellName + "/dockerbuild-buildimage.sh")
+		if err!=nil {
+			log.Printf("run shell file err:%#v", err)
+			utils.ReturnInternalError(w)
+			return
+		}
 		utils.Return(utils.Response{Code:"200", Msg:"genarate shell success"}, w)
 	}
 }
