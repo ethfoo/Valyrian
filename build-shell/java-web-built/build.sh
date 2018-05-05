@@ -90,4 +90,7 @@ _NOW=`date +%Y%m%d-%H%M%S`
 _IMAGE_FULL_NAME="${IMAGE_PRE_NAME}${TARGET_MODULE}:${_NOW}${_REV}"
 ######### 构建镜像 ###############
 cd /root/builder
+chmod +x file/setup.sh
+chmod +x file/setenv.sh
+chmod +x file/startup.sh
 docker build -t ${_IMAGE_FULL_NAME} .
