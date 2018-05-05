@@ -100,7 +100,7 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 			utils.ReturnInternalError(w)
 			return
 		}
-		os.Chmod("output/" + genDto.ShellName + "/build-shell/java-web-built/dockerbuild-buildimage.sh", 0666)
+		os.Chmod("output/" + genDto.ShellName + "/build-shell/java-web-built/dockerbuild-buildimage.sh", 0777)
 
 		if genDto.UseSsh == "true" {
 			prefix := "output/" + genDto.ShellName + "/build-shell/java-web-built/ssh/";
