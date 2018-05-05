@@ -20,5 +20,6 @@ COPY m2 /root/.m2/
 
 COPY runtime /root/builder/
 COPY build.sh /root/
+COPY build-var.sh /root/
 RUN chmod +x /root/build.sh
 ENTRYPOINT ["/root/build.sh"]
