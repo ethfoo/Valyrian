@@ -134,20 +134,21 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//修改脚本
-		buildSh, err := os.OpenFile("output/" + genDto.ShellName + "/build-shell/java-web-built/build.sh", os.O_RDWR, 0666)
+		buildShVar, err := os.OpenFile("output/" + genDto.ShellName + "/build-shell/java-web-built/build-var.sh", os.O_RDWR|os.O_APPEND, 0777)
 		if err!= nil {
 			log.Println(err)
 			utils.ReturnInternalError(w)
 			return
 		}
-		defer buildSh.Close()
+		defer buildShVar.Close()
 
-		curOffset,_ := buildSh.Seek(30, os.SEEK_SET)
+		// curOffset,_ := buildSh.Seek(30, os.SEEK_SET)
 		// log.Printf("curOffset: %d\n", curOffset)
 		gitAddrStr := "REMOTE_GIT_ADDR=" +"'" + genDto.GitAddr + "'\n"
 		repositoryStr := "IMAGE_PRE_NAME=" + "'" + genDto.Repository + "'\n"
 		shellStr := gitAddrStr + repositoryStr
-		buildSh.WriteAt([]byte(shellStr) ,curOffset)
+		// buildSh.WriteAt([]byte(shellStr) ,curOffset)
+		buildShVar.WriteString(shellStr)
 
 		log.Printf("----------begin to build buildimage--------\n")
 		//构建 构建时镜像
