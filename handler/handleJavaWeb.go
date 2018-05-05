@@ -59,15 +59,18 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 
 		if genDto.GitAddr == "" {
 			utils.Return(utils.Response{"400", "git address cannot be null"}, w)
+			return
 		}
 
 		if genDto.Repository == "" {
 			utils.Return(utils.Response{"400", "repository cannot be null"}, w)
+			return
 		}
 
 		if genDto.UseSsh == "true" {
 			if genDto.SshPri == "" || genDto.SshHost == "" {
 				utils.Return(utils.Response{"400", "private secret or known host cannot be null when git clone via ssh"}, w)
+				return
 			}
 			// os.OpenFile("output/" + genDto.ShellName + "/build-shell/")
 		} else {
@@ -95,6 +98,7 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("initOutputFiles err: %#v", err)
 			utils.ReturnInternalError(w)
+			return
 		}
 
 		if genDto.UseSsh == "true" {
