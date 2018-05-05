@@ -87,7 +87,7 @@ mv ./*.war /root/builder/file/ROOT.war
 _REV=${COMMIT_HASH:0:8}
 _NOW=`date +%Y%m%d-%H%M%S`
 
-_IMAGE_FULL_NAME="${IMAGE_PRE_NAME}:${_NOW}${_REV}"
+_IMAGE_FULL_NAME="${IMAGE_PRE_NAME}${TARGET_MODULE}:${_NOW}${_REV}"
 ######### 构建镜像 ###############
 cd /root/builder
 docker build -t ${_IMAGE_FULL_NAME} .

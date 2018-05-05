@@ -22,4 +22,5 @@ COPY runtime /root/builder/
 COPY build.sh /root/
 COPY build-var.sh /root/
 RUN chmod +x /root/build.sh
+WORKDIR /root
 ENTRYPOINT ["/root/build.sh"]
