@@ -151,9 +151,9 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("----------begin to build buildimage--------\n")
 		//构建 构建时镜像
-		_, err = utils.RunShellFile("output/" + genDto.ShellName + "/dockerbuild-buildimage.sh")
+		_, err = utils.RunShellFile("output/" + genDto.ShellName + "/build-shell/java-web-built/dockerbuild-buildimage.sh")
 		if err!=nil {
-			log.Printf("run shell file err:%#v", err)
+			// log.Printf("run shell file err:%#v", err)
 			utils.ReturnInternalError(w)
 			return
 		}
