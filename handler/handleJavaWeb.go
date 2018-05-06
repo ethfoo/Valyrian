@@ -249,7 +249,7 @@ func HandleJavaWebRunShell(w http.ResponseWriter, r *http.Request) {
 		argsStr := branchStr + standaloneStr + "\n"
 		
 		shellStr := "#!/bin/bash\n" + "docker run -v ~/.m2/repository:/root/.m2/repository -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/usr/bin/docker valyrian:buildv1 "
-		rmStr := "rm ./run-build-image.sh\n"
+		rmStr := "rm " + runFileName + "\n"
 		shellStr = shellStr + argsStr + rmStr
 		runFile.WriteString(shellStr)
 
