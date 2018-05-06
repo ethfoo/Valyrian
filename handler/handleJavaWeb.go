@@ -185,7 +185,7 @@ func HandleJavaWebRunShell(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		r.ParseForm()
 		dfVal := RunShellDefaultVal{}
-		dfVal.ShellName = r.FormValue("sn")
+		dfVal.ShellName = r.FormValue("ns")
 
 		// 判断脚本是否存在
 		exist := isShellExist(dfVal.ShellName, w)
@@ -256,7 +256,10 @@ func HandleJavaWebRunShell(w http.ResponseWriter, r *http.Request) {
 		log.Printf("-----------执行run-build-image.sh---------")
 		runbuildimageShell := "output/" + runDto.ShellName + "/build-shell/java-web-built/run-build-image.sh"
 		log.Printf("runbuildimageShell: %s", runbuildimageShell)
-		_, err = utils.RunShellFile(runbuildimageShell)
+		// _, err = utils.RunShellFile(runbuildimageShell)
+		err = utils.RealtimeRunShell(runbuildimageShell, func(line string){
+			log.Printf(line)
+		})
 		if err!=nil {
 			utils.ReturnInternalError(w)
 			return
