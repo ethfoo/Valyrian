@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"log"
 	"os"
 	"io"
@@ -66,4 +67,26 @@ func ListDir(dirName string) ([]os.FileInfo, error) {
 		return nil, err
 	}
 	return fileList, nil
+}
+
+func CheckLine(fileName, line string) (bool, error) {
+	f,err := os.Open(fileName)
+	if err!=nil {
+		log.Printf("checkline open file err:%#v", err)
+		return false, err
+	}
+	defer f.Close()
+	reader := bufio.NewReader(f)
+	for{
+		li, err := reader.ReadString('\n')
+		if err!=nil || err == io.EOF {
+			break
+		}
+		log.Printf("line-->%s", li)
+		if li == line {
+			log.Println("checkout")
+			return true, nil
+		}
+	}
+	return false, nil
 }

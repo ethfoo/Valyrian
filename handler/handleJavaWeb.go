@@ -3,7 +3,6 @@ package handler
 import (
 	"Valyrian/service"
 	"Valyrian/utils"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -20,11 +19,19 @@ type JavaWebGenShell struct {
 	SshPri        string
 	SshHost       string
 	MavenSettings string
+	Standalone    string
+	TargetName    string
 	UseSsh        string
 	GitAddr       string
 	GitUsername   string
 	GitPassword   string
 	Repository    string
+}
+
+type JavaWebRunShell struct {
+	ShellName string
+	Branch string
+	TargetName string
 }
 
 func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +50,7 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 		genDto.SshPri = r.FormValue("sshPri")
 		genDto.SshHost = r.FormValue("sshHost")
 		genDto.MavenSettings = r.FormValue("mavenSettings")
+		genDto.Standalone = r.FormValue("standalone")
 		genDto.UseSsh = r.FormValue("useSsh")
 		genDto.GitAddr = r.FormValue("gitAddr")
 		genDto.GitUsername = r.FormValue("gitUsername")
@@ -78,6 +86,10 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 				// 可能存在开源的无需git权限的场景，这里就不强制要求username和password不为空
 				//utils.Return(utils.Response{"400", "username and password cannot be null when git clone via https"}, w)
 			}
+			if !strings.HasPrefix(genDto.GitAddr, "https") {
+				utils.Return(utils.Response{Code:"400", Msg:"git addr must start with https"}, w)
+				return
+			}
 		}
 
 		// 判断脚本名称是否已经被使用
@@ -101,6 +113,7 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		os.Chmod("output/" + genDto.ShellName + "/build-shell/java-web-built/dockerbuild-buildimage.sh", 0777)
+		// os.Chmod("output/" + genDto.ShellName + "/build-shell/java-web-built/run-java-web-images.sh", 0777)
 
 		if genDto.UseSsh == "true" {
 			prefix := "output/" + genDto.ShellName + "/build-shell/java-web-built/ssh/";
@@ -142,12 +155,11 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 		}
 		defer buildShVar.Close()
 
-		// curOffset,_ := buildSh.Seek(30, os.SEEK_SET)
-		// log.Printf("curOffset: %d\n", curOffset)
 		gitAddrStr := "REMOTE_GIT_ADDR=" +"'" + genDto.GitAddr + "'\n"
 		repositoryStr := "IMAGE_PRE_NAME=" + "'" + genDto.Repository + "'\n"
-		shellStr := gitAddrStr + repositoryStr
-		// buildSh.WriteAt([]byte(shellStr) ,curOffset)
+		standaloneStr := "STANDALONE=" + "'" + genDto.Standalone + "'\n"
+		targetNameStr := "TARGET_MODULE=" + "'" + genDto.ShellName + "'\n"
+		shellStr := gitAddrStr + repositoryStr + standaloneStr + targetNameStr
 		buildShVar.WriteString(shellStr)
 
 		log.Printf("----------begin to build buildimage--------\n")
@@ -164,29 +176,110 @@ func HandleJavaWebGenShell(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func HandleUploadSSH(w http.ResponseWriter, r *http.Request) {
-	log.Println("HandleUploadSSH")
-	if r.Method == "POST" {
-		copiedBytes, err := utils.Upload("uploadSshPriFile", "java-web-built/ssh/", 0600, "", r)
+type RunShellDefaultVal struct {
+	ShellName string
+}
 
-		if err != nil {
-			fmt.Fprintf(w, "upload err: %#v", err)
+func HandleJavaWebRunShell(w http.ResponseWriter, r *http.Request) {
+	log.Println("HandleJavaWebRunShell")
+	if r.Method == "GET" {
+		r.ParseForm()
+		dfVal := RunShellDefaultVal{}
+		dfVal.ShellName = r.FormValue("sn")
+
+		// 判断脚本是否存在
+		exist := isShellExist(dfVal.ShellName, w)
+		if !exist {
 			return
 		}
-		fmt.Fprintf(w, "upload success %#v bytes", copiedBytes)
-		return
+
+		t, err := template.ParseFiles("static/java-web/runJavaWeb.gtpl")
+		if err != nil {
+			log.Printf("parse java-web/runJavaWeb.gtpl err: %#v", err)
+		}
+		//defaultVal := DefaultValue{Repo: "hub.c.163.com/ethfoo/"}
+		t.Execute(w, dfVal)
+	} else {
+		r.ParseForm()
+		runDto := JavaWebRunShell{}
+		runDto.ShellName = r.FormValue("ns")
+		runDto.Branch = r.FormValue("branch")
+		runDto.TargetName = r.FormValue("targetName")
+		log.Printf("runDto: %#v", runDto)
+
+		// 参数检查
+		if runDto.Branch == "" {
+			utils.Return(utils.Response{Code:"400", Msg:"branch cannot be null"}, w)
+			return
+		}
+		if runDto.TargetName == "" {
+			utils.Return(utils.Response{Code:"400", Msg:"target name cannot be null", }, w)
+			return
+		}
+		// 判断脚本是否存在
+		exist := isShellExist(runDto.ShellName, w)
+		if !exist {
+			return
+		}
+
+		// 生成并运行构建最终镜像脚本
+		runFileName := "output/" + runDto.ShellName + "/build-shell/java-web-built/run-build-image.sh"
+		runFile, err := os.OpenFile( runFileName, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0777)
+		if err!=nil {
+			utils.ReturnInternalError(w)
+			return
+		}
+		err = os.Chmod(runFileName, 0777)
+		if err!=nil {
+			utils.ReturnInternalError(w)
+			return
+		}
+		defer runFile.Close()
+
+		isStandalone, err := utils.CheckLine("output/" + runDto.ShellName + "/build-shell/java-web-built/build-var.sh", "STANDALONE='-s'\n")
+		if err!=nil {
+			utils.ReturnInternalError(w)
+			return
+		}
+		var standaloneStr string
+		if isStandalone {
+			standaloneStr=" -s "
+		}
+		branchStr := " -b " + runDto.Branch
+		argsStr := branchStr + standaloneStr + "\n"
+		
+		shellStr := "#!/bin/bash\n" + "docker run -v ~/.m2/repository:/root/.m2/repository -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/usr/bin/docker valyrian:buildv1 "
+		rmStr := "rm ./run-build-image.sh\n"
+		shellStr = shellStr + argsStr + rmStr
+		runFile.WriteString(shellStr)
+
+		log.Printf("-----------执行run-build-image.sh---------")
+		runbuildimageShell := "output/" + runDto.ShellName + "/build-shell/java-web-built/run-build-image.sh"
+		log.Printf("runbuildimageShell: %s", runbuildimageShell)
+		_, err = utils.RunShellFile(runbuildimageShell)
+		if err!=nil {
+			utils.ReturnInternalError(w)
+			return
+		}
+		utils.Return(utils.Response{Code:"200", Msg:"run build image shell success"}, w)
 	}
 }
 
-func HandleUploadMaven(w http.ResponseWriter, r *http.Request) {
-	log.Println("HandleUploadMaven")
-	if r.Method == "POST" {
-		copiedBytes, err := utils.Upload("uploadMavenFile", "java-web-built/m2/", 0666, "settings.xml", r)
-		if err != nil {
-			fmt.Fprintf(w, "upload err: %#v", err)
-			return
+func isShellExist(shellName string, w http.ResponseWriter) bool {
+	dirList, err := utils.ListDir("output")
+		if err!=nil {
+			utils.ReturnInternalError(w)
+			return false
 		}
-		fmt.Fprintf(w, "upload success %#v bytes", copiedBytes)
-		return
-	}
+		isExist := false
+		for _, fi:= range dirList {
+			if fi.Name() == shellName {
+				isExist = true
+			}
+		}
+		if !isExist {
+			utils.Return(utils.Response{Code:"400", Msg:"shell name is not exist"}, w)
+			return false
+		}
+		return true
 }

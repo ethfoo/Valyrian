@@ -28,7 +28,7 @@ source ./build-var.sh
 #BRANCH='master'
 #MAVEN项目类型：有子模块还是没有
 #STANDALONE='-s'
-#构建的MAVEN子模块+s
+#构建的MAVEN子模块
 #TARGET_MODULE='base-springmvc-spring Webapp'
 #镜像TAG前缀
 #IMAGE_PRE_NAME='valyrian'

@@ -4,7 +4,7 @@
         <div><h2>生成java-web项目的shell脚本</h2></div>
         <div>
          <form action="/java-web/gen" method="POST">
-            <h3>给该脚本起一个名字(必填)：</h3>
+            <h3>项目名称(必填)：</h3>
             <input type="text" name="shellName" />
             <h3>默认git地址(必填)</h3>
             <input type="text" name="gitAddr" />
@@ -18,6 +18,9 @@
             password:<input type="password" name="gitPassword" />
             <h3>maven的settings文件，不传则使用默认maven settings</h3>
             <textarea style='width:200px,height:100px' name="mavenSettings"></textarea>
+            <h3>是否有maven子模块</h3>
+            <input type="radio" name="standalone" value="-s" checked>没有maven子模块</input>
+            <input type="radio" name="standalone" value="">有maven子模块</input>
             
             <h3>生成的镜像Repository前缀，如hub.c.163.com/ncerepo/</h3>
             <input type="text" name="repository" value="{{.Repo}}"/>
