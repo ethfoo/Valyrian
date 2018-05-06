@@ -266,6 +266,7 @@ func HandleJavaWebRunShell(w http.ResponseWriter, r *http.Request) {
 }
 
 func isShellExist(shellName string, w http.ResponseWriter) bool {
+	log.Printf("isShellExist, input shellname: %s", shellName)
 	dirList, err := utils.ListDir("output")
 		if err!=nil {
 			utils.ReturnInternalError(w)
@@ -273,6 +274,7 @@ func isShellExist(shellName string, w http.ResponseWriter) bool {
 		}
 		isExist := false
 		for _, fi:= range dirList {
+			log.Printf("isShellExist,list fileName: %s", fi.Name())
 			if fi.Name() == shellName {
 				isExist = true
 			}
