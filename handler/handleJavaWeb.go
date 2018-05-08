@@ -8,7 +8,10 @@ import (
 	"net/http"
 	"strings"
 	"os"
+	"golang.org/x/net/websocket"
 )
+
+var wschan = make(chan string, 1024)
 
 type DefaultValue struct {
 	Repo string
@@ -256,16 +259,72 @@ func HandleJavaWebRunShell(w http.ResponseWriter, r *http.Request) {
 		log.Printf("-----------执行run-build-image.sh---------")
 		runbuildimageShell := "output/" + runDto.ShellName + "/build-shell/java-web-built/run-build-image.sh"
 		log.Printf("runbuildimageShell: %s", runbuildimageShell)
-		// _, err = utils.RunShellFile(runbuildimageShell)
-		err = utils.RealtimeRunShell(runbuildimageShell, func(line string){
-			log.Printf(line)
-		})
-		if err!=nil {
-			utils.ReturnInternalError(w)
-			return
-		}
-		utils.Return(utils.Response{Code:"200", Msg:"run build image shell success"}, w)
+
+		http.Redirect(w, r, "/java-web/result", http.StatusFound)
+		// go func(){
+		// 	for i:=0; i<100; i++ {
+		// 		log.Printf("after redirect ---->%d", i)
+		// 		time.Sleep(time.Second)
+		// 		msg := fmt.Sprintf("I love summer %d", i)
+		// 		wschan <- msg
+		// 	}
+		// }()
+		
+		go func(){
+			err = utils.RealtimeRunShell(runbuildimageShell, func(line string){
+				log.Printf(line)
+				wschan <- line
+			})
+			if err!=nil {
+				utils.ReturnInternalError(w)
+				return
+			}
+		}()
+		
+		// utils.Return(utils.Response{Code:"200", Msg:"run build image shell success"}, w)
+		
 	}
+}
+
+func HandleRunResult(w http.ResponseWriter, r *http.Request) {
+	log.Printf("HandleRunResult")
+	if r.Method == "GET" {
+		r.ParseForm()
+		t, err := template.ParseFiles("static/java-web/runResult.gtpl")
+		if err != nil {
+			log.Printf("parse java-web/runResult.gtpl err: %#v", err)
+		}
+		t.Execute(w, nil)
+	}
+}
+
+func HandleWebsock(conn *websocket.Conn) {
+	defer conn.Close()
+
+		for {
+			// var receive string
+	
+			rev := <- wschan
+			log.Printf("#####websock received log: %s", rev)
+			err := websocket.Message.Send(conn, "received: " + rev)
+			if err!=nil {
+				log.Printf("websock send err:%#v", err)
+				break
+			}
+			
+			// err := websocket.Message.Receive(conn, &receive)
+			// if err!=nil {
+			// 	log.Printf("websock receive err: %#v", err)
+			// 	break
+			// }
+			// log.Printf("websock receivce msg: %s", receive)
+			// err = websocket.Message.Send(conn, "received: " + receive)
+			// if err!=nil {
+			// 	log.Printf("websock send err:%#v", err)
+			// 	break
+			// }
+		}
+
 }
 
 func isShellExist(shellName string, w http.ResponseWriter) bool {
