@@ -10,7 +10,8 @@
         <button onclick="send();">Send Message</button>
         <script type="text/javascript">
             var sock = null;
-            var wsuri = "ws://127.0.0.1:8848/ws";
+            var wsuri = 'ws://' + location.host + '/ws';
+            console.log(location)
             window.onload = function() {
                 console.log("onload");
                 sock = new WebSocket(wsuri);
